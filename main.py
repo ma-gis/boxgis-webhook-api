@@ -1,4 +1,4 @@
-import logging, os,sys, json, datetime, requests
+import logging, os,sys, json, datetime, httpx
 from fastapi import Depends, FastAPI, Request, HTTPException
 from boxsdk import JWTAuth, Client
 from pyproj import Transformer
@@ -12,6 +12,7 @@ logger.addHandler(stream_handler)
 
 # coordinate converter from 4326 to 3857 used by ArcGIS Online
 transformer = Transformer.from_crs("EPSG:4326", "EPSG:3857")
+ags_service_url = "https://services8.arcgis.com/ztWuThaRbt3zCysN/arcgis/rest/services/BoxCaptureData_gdb/FeatureServer/0"
 
 # box configuration
 if os.path.exists('/etc/secrets/config.json'):
@@ -46,15 +47,14 @@ async def webhook(request: Request):
                 features = [{"attributes":{"BoxFileID" : source_id,"SharedLink":shared_link, "FileName":file_info.name,"CreatedDate":created_at, "WebhookID":webhook_id, "WebhookTrigger":webhook_trigger},
                             "geometry" : {"x" : x,"y" : y}}]
 
-                response = requests.post('https://services8.arcgis.com/ztWuThaRbt3zCysN/arcgis/rest/services/BoxCaptureData_gdb/FeatureServer/0/addFeatures?f=json', 
-                                        data={"features": json.dumps(features)})
+                async with httpx.AsyncClient() as client:
+                    response_add = await client.post(f"{ags_service_url}/addFeatures?f=json", data={"features": json.dumps(features)})
+                    logger.debug(f"ArcGIS add features response:{response_add.status_code}")
 
-                logger.debug(f"arcgis_add_features_response:{response}")
     elif webhook_trigger == "FILE.TRASHED":
-        response = requests.post('https://services8.arcgis.com/ztWuThaRbt3zCysN/arcgis/rest/services/BoxCaptureData_gdb/FeatureServer/0/deleteFeatures?f=json', 
-                                data={"where": f'BoxFileID={source_id}'})
-
-        logger.debug(f"arcgis_delete_features_response:{response}")
+        async with httpx.AsyncClient() as client:
+            response_add = await client.post(f"{ags_service_url}/deleteFeatures?f=json", data={"where": f'BoxFileID={source_id}'})
+            logger.debug(f"ArcGIS Add Feature Response:{response_add.status_code}")        
 
     return  {"success": True}
 
