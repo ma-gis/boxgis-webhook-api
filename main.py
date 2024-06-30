@@ -47,14 +47,14 @@ async def webhook(request: Request):
                 features = [{"attributes":{"BoxFileID" : source_id,"SharedLink":shared_link, "FileName":file_info.name,"CreatedDate":created_at, "WebhookID":webhook_id, "WebhookTrigger":webhook_trigger},
                             "geometry" : {"x" : x,"y" : y}}]
 
-                async with httpx.AsyncClient() as client:
-                    response_add = await client.post(f"{ags_service_url}/addFeatures?f=json", data={"features": json.dumps(features)})
+                async with httpx.AsyncClient() as httpClient:
+                    response_add = await httpClient.post(f"{ags_service_url}/addFeatures?f=json", data={"features": json.dumps(features)})
                     logger.debug(f"ArcGIS add features response:{response_add.status_code}")
 
     elif webhook_trigger == "FILE.TRASHED":
-        async with httpx.AsyncClient() as client:
-            response_add = await client.post(f"{ags_service_url}/deleteFeatures?f=json", data={"where": f'BoxFileID={source_id}'})
-            logger.debug(f"ArcGIS Add Feature Response:{response_add.status_code}")        
+        async with httpx.AsyncClient() as httpClient:
+            response_delete = await httpClient.post(f"{ags_service_url}/deleteFeatures?f=json", data={"where": f'BoxFileID={source_id}'})
+            logger.debug(f"ArcGIS delete features response:{response_delete.status_code}")        
 
     return  {"success": True}
 
