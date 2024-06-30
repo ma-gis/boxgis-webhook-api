@@ -23,15 +23,6 @@ elif os.path.exists(os.path.join(os.path.dirname(os.path.abspath(__file__)),'con
 else:
     raise f'box config not found'
 
-async def root():
-
-    logger.info("info message")
-    logger.warning("warning message")
-    logger.debug("debug message")
-    logger.error("error message")
-    logger.critical("critical message")
-    return {'boxgis api runnig!'}
-
 @app.post("/webhook")
 async def webhook(request: Request):
     body_dict = await request.json()
